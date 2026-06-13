@@ -87,6 +87,13 @@ def style_tendency(val):
         return "font-size: 1.1rem; text-align: center; opacity: 0.5;"
     return ""
 
+# Setze den Seiten-Modus (wide ist für Tabellen immer besser!)
+st.set_page_config(layout="wide")
+
+# Sidebar-Optionen – hier entscheidet der User, was er sehen will
+st.sidebar.header("Anzeige-Optionen")
+mobile_mode = st.sidebar.toggle("Kompakt-Ansicht (Tablet)", value=False)
+
 # Seitenkonfiguration
 st.set_page_config(page_title="Analysten-Radar", layout="wide")
 
@@ -281,22 +288,28 @@ if view_mode == "📋 Gesamtübersicht (Watchlist)":
             # Erst das DataFrame erstellen
             df_overview = pd.DataFrame(table_data)
             
-            # WICHTIG: Ticker explizit als String, um Konsistenz zu erzwingen
-           # ... (nachdem df_overview erstellt wurde)
-            df_overview["Analysten-Tendenz"] = df_overview["Analysten-Tendenz"].astype(str)
-            
-            # Jetzt zeigen wir den Styler an
+            # Konfiguration für die Tabelle definieren
+            tendenz_config = {
+                "Analysten-Tendenz": st.column_config.TextColumn(
+                    "Tendenz",
+                    help="🟢 🟢 🟢 Strong Buy | 🟢 Buy | ⚪ Hold | 🔴 Sell | 🔴 🔴 🔴 Strong Sell"
+                )
+            }
+
+            # Entscheiden, welche Daten angezeigt werden
+            if mobile_mode:
+                df_to_show = df_overview[["Ticker", "Aktueller Kurs", "Potenzial (Upside)", "Analysten-Tendenz"]]
+            else:
+                df_to_show = df_overview
+
+            # Die Tabelle EINMAL rendern
             st.dataframe(
-                df_overview,
+                df_to_show,
                 width="stretch",
                 hide_index=True,
-                column_config={
-                    "Analysten-Tendenz": st.column_config.TextColumn(
-                        "Analysten-Tendenz",
-                        help="🟢 🟢 🟢 Strong Buy | 🟢 Buy | ⚪ Hold | 🔴 Sell | 🔴 🔴 🔴 Strong Sell"
-                    )
-                }
+                column_config=tendenz_config
             )
+            
             st.caption("💡 Tipp: Klicke oben auf 'Detail-Analyse', um die Charts anzusehen.")
 
     # --- RECHTE SPALTE: GLOBAL MARKET RUNNER-UPS ---
